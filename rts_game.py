@@ -1179,7 +1179,7 @@ def draw_game(screen, state: GameState):
     units_text = main_font.render(f"Red: {p1_units} units | Blue: {p2_units} units", True, COLORS["text"])
     screen.blit(units_text, (10, info_y + 30))
 
-def show_game_over(screen, winner, time_up=False):
+def show_game_over(screen, winner, time_up=False, player1_config=None, player2_config=None):
     """Display a game over message"""
     # Use custom font for game over screen
     font = load_font(36)
@@ -1191,7 +1191,12 @@ def show_game_over(screen, winner, time_up=False):
     if winner == Player.NEUTRAL:
         winner_text = "It's a Draw!"
         winner_color = COLORS["neutral"]
+        print("It's a Draw!")
     else:
+        if winner == Player.PLAYER1:
+            print(player1_config[1])
+        else:
+            print(player2_config[1])
         winner_text = "Player 1 (Red)" if winner == Player.PLAYER1 else "Player 2 (Blue)"
         winner_color = COLORS["player1"] if winner == Player.PLAYER1 else COLORS["player2"]
 
@@ -1632,7 +1637,7 @@ def run_game(player1_config=None, player2_config=None, size=8, max_duration=60):
         if winner and not game_over:
             game_over = True
             time_up = time.time() - state.start_time >= state.max_duration
-            show_game_over(screen, winner, time_up)
+            show_game_over(screen, winner, time_up, player1_config, player2_config)
             break
         
         if not game_over:
