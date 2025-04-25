@@ -584,7 +584,7 @@ class GameState:
         
         seen_moves = {}
         for move in moves_list:
-            key = (move[0], move[1], move[2], move[3])  
+            key = (move[0], move[1])  
             if key not in seen_moves:
                 seen_moves[key] = move
         
