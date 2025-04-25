@@ -262,14 +262,22 @@ class FortifiedBase(Base):
         """Return the multiplier for number of troops that can be sent from this base."""
         return 2  # Can send twice as many troops at once (removed decimal point)
 
-def is_valid_route(grid, route):
+def is_valid_route(grid, route, sourcex, sourcey, targetx, targety):
     """Check if the specified route is valid (all cells are within bounds and passable)."""
+    if not (isinstance(route, list)):
+        return False
+    for r in route:
+        if not (isinstance(r, list) and len(r) == 2):
+            return False
+    base = 0
     for x, y in route:
         if not (isinstance(x, int) and isinstance(y, int) and 0 <= x < len(grid) and 0 <= y < len(grid[0])):
             return False
         if grid[y][x] != 0:
-            return False
-    return True
+            base += 1
+    if not (route[0] == [sourcex, sourcey] and route[-1] == [targetx, targety]):
+        return False
+    return True if base == 2 else False
 
 
 class GameState:
@@ -447,7 +455,7 @@ class GameState:
         
         # Calculate path
         source_pos = (source_x, source_y)
-        if custom_route and is_valid_route(self.grid, custom_route):
+        if custom_route and is_valid_route(self.grid, custom_route, source_x, source_y, target_x, target_y):
             path = custom_route
         else:
             path = a_star_search(self.grid, source_pos, (target_x, target_y))
@@ -1469,10 +1477,7 @@ def execute_player_strategy(strategy_or_id, game_state, player, language_server=
             try:
                 # Convert game state to JSON and pass it to the strategy
                 result = strategy_or_id(json_state, player.value)
-                print("GOOOOOOOOOOOOOOOOOOOOOOOOOZ")
                 print("NABAYAD IN ETTEFAGH BIOFTE!!")
-                print("CALL 911...")
-                print("GOOOOOOOOOOOOOOOOOOOOOOOOOZ")
                 
                 # Process the result as if it came from an external process
                 if isinstance(result, dict):
