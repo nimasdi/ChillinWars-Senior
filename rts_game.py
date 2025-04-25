@@ -68,7 +68,10 @@ def a_star_search(grid, start, goal):
             while current in came_from:
                 path.append(current)
                 current = came_from[current]
+            path.append(start)
             path.reverse()
+            # print(f"{path}")
+
             return path
 
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -295,71 +298,109 @@ class GameState:
         self.initialize_bases()
 
     def initialize_bases(self):
-        # Create player starting bases
+        # Create player starting bases at opposite corners
         self.add_base(0, 0, Player.PLAYER1, 50)
         self.add_base(self.size - 1, self.size - 1, Player.PLAYER2, 50)
         
-        # Add some neutral bases
+        # Calculate center points for resource distribution
+        center_x = self.size // 2
+        center_y = self.size // 2
+        
+        # Add neutral bases in a balanced way
         num_neutral = random.randint(3, 6)
-        for _ in range(num_neutral):
-            while True:
-                x, y = random.randint(1, self.size - 2), random.randint(1, self.size - 2)
-                if self.grid[y][x] == 0:  # If position is empty
-                    units = random.randint(10, 40)
-                    self.add_base(x, y, Player.NEUTRAL, units)
-                    
-                    # Check if the new base is connected to at least one existing base
-                    connected = False
-                    for base in self.bases:
-                        if base.x != x or base.y != y:
-                            path = a_star_search(self.grid, (x, y), (base.x, base.y))
-                            if path:
-                                connected = True
-                                break
-                    
-                    if connected:
-                        break
-                    else:
-                        self.grid[y][x] = 0
-                        self.bases.pop()
+        neutral_positions = []
 
-        # Add special bases
-        pos1_x, pos1_y = self.size // 2, self.size // 2
-        if self.grid[pos1_y][pos1_x] == 0:  
+        kx1, ky1 = 0, self.size-1
+        kx2, ky2 = self.size-1, 0
+
+        if self.grid[ky1][kx1] == 0:
+            self.add_speedy_base(kx1, ky1, Player.NEUTRAL, 50)
+        else:
+            self.place_speedy_base_at_empty_spot(50)
+
+        if self.grid[ky2][kx2] == 0:
+            self.add_speedy_base(kx2, ky2, Player.NEUTRAL, 50)
+        else:
+            self.place_speedy_base_at_empty_spot(50)
+
+
+        # Place special bases in a balanced way
+        # First speedy base - closer to player 1
+        sx1, sy1 = self.size // 4, self.size // 4
+        if self.grid[sy1][sx1] == 0:
+            self.add_speedy_base(sx1, sy1, Player.NEUTRAL, 25)
+        else:
+            self.place_speedy_base_at_empty_spot(25)
+        
+        # Second speedy base - closer to player 2
+        sx2, sy2 = 3 * self.size // 4, 3 * self.size // 4
+        if self.grid[sy2][sx2] == 0:
+            self.add_speedy_base(sx2, sy2, Player.NEUTRAL, 25)
+        else:
+            self.place_speedy_base_at_empty_spot(25)
+        
+        # First fortified base - in middle-top area
+        fx1, fy1 = self.size // 2, self.size // 4
+        if self.grid[fy1][fx1] == 0:
+            self.add_fortified_base(fx1, fy1, Player.NEUTRAL, 35)
+        else:
+            self.place_fortified_base_at_empty_spot(35)
+        
+        # Second fortified base - in middle-bottom area
+        fx2, fy2 = self.size // 2, 3 * self.size // 4
+        if self.grid[fy2][fx2] == 0:
+            self.add_fortified_base(fx2, fy2, Player.NEUTRAL, 35)
+        else:
+            self.place_fortified_base_at_empty_spot(35)
+        
+        # Add special bases in the center area
+        # First special base - slightly left of center
+        pos1_x, pos1_y = center_x - 1, center_y
+        if self.grid[pos1_y][pos1_x] == 0:
             self.add_special_base(pos1_x, pos1_y, Player.NEUTRAL, 30)
         else:
             self.place_special_base_at_empty_spot(30)
-            
-        pos2_x, pos2_y = self.size // 4, self.size // 4 * 3
-        if self.grid[pos2_y][pos2_x] == 0:  
+        
+        # Second special base - slightly right of center
+        pos2_x, pos2_y = center_x + 1, center_y
+        if self.grid[pos2_y][pos2_x] == 0:
             self.add_special_base(pos2_x, pos2_y, Player.NEUTRAL, 30)
         else:
             self.place_special_base_at_empty_spot(30)
         
-        # Add speedy bases
-        sx1, sy1 = self.size // 4, self.size // 4
-        if self.grid[sy1][sx1] == 0:  
-            self.add_speedy_base(sx1, sy1, Player.NEUTRAL, 25)
-        else:
-            self.place_speedy_base_at_empty_spot(25)
-            
-        sx2, sy2 = self.size // 4 * 3, self.size // 4 * 3
-        if self.grid[sy2][sx2] == 0:  
-            self.add_speedy_base(sx2, sy2, Player.NEUTRAL, 25)
-        else:
-            self.place_speedy_base_at_empty_spot(25)
-            
-        fx1, fy1 = self.size // 4 * 3, self.size // 4
-        if self.grid[fy1][fx1] == 0:  
-            self.add_fortified_base(fx1, fy1, Player.NEUTRAL, 35)
-        else:
-            self.place_fortified_base_at_empty_spot(35)
-            
-        fx2, fy2 = self.size // 4, self.size // 4 * 3
-        if self.grid[fy2][fx2] == 0:  
-            self.add_fortified_base(fx2, fy2, Player.NEUTRAL, 35)
-        else:
-            self.place_fortified_base_at_empty_spot(35)
+        # First, add neutral bases in the middle area
+        middle_radius = self.size // 3
+        for _ in range(num_neutral // 2):
+            attempts = 0
+            while attempts < 10:  # Limit attempts to avoid infinite loop
+                x = random.randint(center_x - middle_radius, center_x + middle_radius)
+                y = random.randint(center_y - middle_radius, center_y + middle_radius)
+                if self.grid[y][x] == 0:  # If position is empty
+                    units = random.randint(10, 30)  # Slightly reduced unit count
+                    self.add_base(x, y, Player.NEUTRAL, units)
+                    neutral_positions.append((x, y))
+                    break
+                attempts += 1
+        
+        # Then add neutral bases in the outer areas, ensuring fair distribution
+        for _ in range(num_neutral - len(neutral_positions)):
+            attempts = 0
+            while attempts < 10:
+                # Alternate between top-left and bottom-right quadrants
+                if len(neutral_positions) % 2 == 0:
+                    x = random.randint(1, self.size // 3)
+                    y = random.randint(1, self.size // 3)
+                else:
+                    x = random.randint(2 * self.size // 3, self.size - 2)
+                    y = random.randint(2 * self.size // 3, self.size - 2)
+                
+                if self.grid[y][x] == 0:
+                    units = random.randint(10, 30)
+                    self.add_base(x, y, Player.NEUTRAL, units)
+                    neutral_positions.append((x, y))
+                    break
+                attempts += 1
+
 
     def place_special_base_at_empty_spot(self, units):
         for x in range(1, self.size - 1):
