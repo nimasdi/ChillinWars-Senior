@@ -82,6 +82,7 @@ class GameClient:
         Implement your strategy here.
         This is a simple example that finds the strongest base and attacks a nearby neutral base.
         """
+        # print(f"log: {time.time()}", flush=True)
         player = game_state["player"]
         size = game_state["size"]
         game_time = game_state["game_time"]
@@ -131,6 +132,7 @@ class GameClient:
         return response
 
 def main():
+    print("🚨 Python Player script is running", flush=True)
     if len(sys.argv) < 4:
         print("Usage: python socket_player_template.py <port> <player_id> <player_num>")
         sys.exit(1)
